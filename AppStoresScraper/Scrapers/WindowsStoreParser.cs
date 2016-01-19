@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 
 namespace AppStoresScraper
 {
-    public class WindowsStoreParser : IStoreParser
+    public class WindowsStoreScraper : IStoreScraper
     {
         private const string IdFromUrlRegex = @"http.*?://w*?\.*?microsoft.com/[\w-/]*?store/.+/([\w]+)";//https://www.microsoft.com/store/apps/{0}
         private const string StoreUrlTemplate = "https://storeedgefd.dsx.mp.microsoft.com/pages/pdp?productId={0}&appVersion=2015.9.9.2&market=US&locale=en-US&deviceFamily=Windows.Desktop";
@@ -30,12 +30,12 @@ namespace AppStoresScraper
                 throw new ArgumentException(nameof(url));
             return RegexUtils.GetGroup(IdFromUrlRegex, url);
         }
-        public WindowsStoreParser(HttpClient client)
+        public WindowsStoreScraper(HttpClient client)
         {
             _client = client;
         }
 
-        public async Task<AppMetadata> Parse(string appId)
+        public async Task<AppMetadata> Scrape(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);

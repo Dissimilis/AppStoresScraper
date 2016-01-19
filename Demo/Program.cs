@@ -16,34 +16,34 @@ namespace Demo
         static void Main(string[] args)
         {
 
-            var parserFactory = new StoreParserFactory();
+            var scraperFactory = new StoreScraperFactory();
 
             //Apple store
-            var result = parserFactory.Parse("https://itunes.apple.com/us/app/logic-pro-x/id634148309?mt=12", true).Result;
+            var result = scraperFactory.Scrape("https://itunes.apple.com/us/app/logic-pro-x/id634148309?mt=12", true).Result;
             WriteJson(result);
 
             //Google Play store
-            result = parserFactory.Parse("https://play.google.com/store/apps/details?id=com.google.android.talk", true).Result;
+            result = scraperFactory.Scrape("https://play.google.com/store/apps/details?id=com.google.android.talk", true).Result;
             WriteJson(result);
 
             //Windows store
-            result = parserFactory.Parse("https://www.microsoft.com/en-us/store/apps/circle-rush/9nblggh0cdmf", true).Result;
+            result = scraperFactory.Scrape("https://www.microsoft.com/en-us/store/apps/circle-rush/9nblggh0cdmf", true).Result;
             WriteJson(result);
 
             //Get store type from URL
-            var storeType = parserFactory.GetParser("https://play.google.com/store/apps/details?id=com.android.chrome").Store;
+            var storeType = scraperFactory.GetScraper("https://play.google.com/store/apps/details?id=com.android.chrome").Store;
 
             //Get and call parser for specific store
-            var parser = parserFactory.GetParser(StoreType.PlayStore);
-            var metadata = parser.Parse("com.android.chrome").Result;
-            var icon = parser.DownloadIcon(metadata).Result;
+            var scraper = scraperFactory.GetScraper(StoreType.PlayStore);
+            var metadata = scraper.Scrape("com.android.chrome").Result;
+            var icon = scraper.DownloadIcon(metadata).Result;
             ImageToAscii(icon.Content);
 
 
             Console.ReadKey();
         }
  
-        static void WriteJson(StoreParseResult obj)
+        static void WriteJson(StoreScrapeResult obj)
         {
             var json = JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings {ContractResolver = new NoBloatResolver()});
             Console.WriteLine(json);

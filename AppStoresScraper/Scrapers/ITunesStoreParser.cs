@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace AppStoresScraper
 {
-    public class ITunesStoreParser : IStoreParser
+    public class TunesStoreScraper : IStoreScraper
     {
         private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/[\w]*?/app/[\w-]*?/id([\d]+)";
         private const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
@@ -24,12 +24,12 @@ namespace AppStoresScraper
                 throw new ArgumentException(nameof(url));
             return RegexUtils.GetGroup(IdFromUrlRegex, url);
         }
-        public ITunesStoreParser(HttpClient client)
+        public TunesStoreScraper(HttpClient client)
         {
             _client = client;
         }
 
-        public async Task<AppMetadata> Parse(string appId)
+        public async Task<AppMetadata> Scrape(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);

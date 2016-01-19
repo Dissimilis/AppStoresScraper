@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AppStoresScraper
 {
-    public class PlayStoreParser : IStoreParser
+    public class PlayStoreScraper : IStoreScraper
     {
         private const string IdFromUrlRegex = @"((http.*?://play\.google\.com/store/apps/)|(market://))details\?id=([\w\.]+)";
         private const string IconImgRegex = @"cover-container.+?<img[^>]+?cover-image""[^>]+?src.+?([^""]+)";
@@ -31,7 +31,7 @@ namespace AppStoresScraper
         private HttpClient _client;
 
         public StoreType Store { get; } = StoreType.PlayStore;
-        public PlayStoreParser(HttpClient client)
+        public PlayStoreScraper(HttpClient client)
         {
             _client = client;
         }
@@ -42,7 +42,7 @@ namespace AppStoresScraper
                 throw new ArgumentException(nameof(url));
             return RegexUtils.GetGroup(IdFromUrlRegex, url, 4);
         }
-        public async Task<AppMetadata> Parse(string appId)
+        public async Task<AppMetadata> Scrape(string appId)
         {
             var uri = new Uri(string.Format(StoreUrlTemplate, appId));
 

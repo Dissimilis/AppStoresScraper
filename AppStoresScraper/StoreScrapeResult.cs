@@ -3,7 +3,7 @@ using System.Text;
 
 namespace AppStoresScraper
 {
-    public class StoreParseResult
+    public class StoreScrapeResult
     {
         public AppMetadata Metadata { get; set; }
         public StoreType Store { get; set; }

@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace AppStoresScraper
 {
-    public class StoreParserFactory
+    public class StoreScraperFactory
     {
-        public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; LongBeach/1.0)";
+        public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.0; https://github.com/Dissimilis/AppStoresScraper)";
 
         private HttpClient _client;
-        public StoreParserFactory(string userAgent = null)
+        public StoreScraperFactory(string userAgent = null)
         {
             var cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
@@ -23,25 +23,25 @@ namespace AppStoresScraper
             _client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
         }
 
-        public async Task<StoreParseResult> Parse(string url, bool downloadImages)
+        public async Task<StoreScrapeResult> Scrape(string url, bool downloadImages)
         {
             var sw = new Stopwatch();
             sw.Start();
-            var result = new StoreParseResult();
+            var result = new StoreScrapeResult();
             try
             {
-                var parser = GetParser(url);
-                if (parser == null)
+                var screaper = GetScraper(url);
+                if (screaper == null)
                     return result;
-                result.Store = parser.Store;
-                var id = parser.GetIdFromUrl(url);
+                result.Store = screaper.Store;
+                var id = screaper.GetIdFromUrl(url);
                 result.AppId = id;
                 if (string.IsNullOrEmpty(id))
                     return result;
-                result.Metadata = await parser.Parse(id);
+                result.Metadata = await screaper.Scrape(id);
                 if (result.Metadata?.IconUrl != null && result.Metadata.IconUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    result.Icon = await parser.DownloadIcon(result.Metadata);
+                    result.Icon = await screaper.DownloadIcon(result.Metadata);
                 }
             }
             catch (Exception ex)
@@ -60,21 +60,21 @@ namespace AppStoresScraper
             return result;
         }
 
-        public IStoreParser GetParser(string url)
+        public IStoreScraper GetScraper(string url)
         {
             var type = GetStoreType(url);
             if (type == null)
                 return null;
-            return GetParser(type.Value);
+            return GetScraper(type.Value);
 
         }
-        public IStoreParser GetParser(StoreType store)
+        public IStoreScraper GetScraper(StoreType store)
         {
             switch (store)
             {
-                case StoreType.PlayStore: return new PlayStoreParser(_client);
-                case StoreType.ITunes: return new ITunesStoreParser(_client);
-                case StoreType.WindowsStore: return new WindowsStoreParser(_client);
+                case StoreType.PlayStore: return new PlayStoreScraper(_client);
+                case StoreType.ITunes: return new TunesStoreScraper(_client);
+                case StoreType.WindowsStore: return new WindowsStoreScraper(_client);
                 default: return null;
             }
         }

@@ -2,11 +2,11 @@
 
 namespace AppStoresScraper
 {
-    public interface IStoreParser
+    public interface IStoreScraper
     {
         StoreType Store { get; }
         string GetIdFromUrl(string url);
-        Task<AppMetadata> Parse(string appId);
+        Task<AppMetadata> Scrape(string appId);
         Task<AppIcon> DownloadIcon(AppMetadata meta);
 
     }
