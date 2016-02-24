@@ -18,7 +18,7 @@ namespace AppStoresScraper
         private const string StoreUrlUserTemplate = "https://www.microsoft.com/store/apps/{0}";
         private HttpClient _client;
 
-        public StoreType Store { get; } = StoreType.WindowsStore;
+        public ScraperStoreType Store { get; } = ScraperStoreType.WindowsStore;
 
         //Uses this color if API returns transparent or empty BgColor
 
@@ -34,8 +34,14 @@ namespace AppStoresScraper
         {
             _client = client;
         }
+        public string GetUrlFromId(string appId)
+        {
+            if (appId == null)
+                throw new ArgumentNullException(nameof(appId));
+            return string.Format(StoreUrlUserTemplate, appId.ToLower());
+        }
 
-        public async Task<AppMetadata> Scrape(string appId)
+        public async Task<AppMetadata> ScrapeAsync(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
@@ -43,8 +49,8 @@ namespace AppStoresScraper
             var response = await _client.SendAsync(msg);
             var content = await response.Content.ReadAsStringAsync();
             var result = GetAppPayload(content, appId);
-            var meta = new AppMetadata() { Id = result.ProductId };
-            meta.StoreUrl = string.Format(StoreUrlUserTemplate, meta.Id);
+            var meta = new AppMetadata() { Id = result.ProductId, StoreType = Store };
+            meta.AppUrl = string.Format(StoreUrlUserTemplate, meta.Id);
             meta.Name = result.Title;
             var icon = GetIcon(result.Images);
             meta.IconUrl = icon?.Url;
@@ -81,14 +87,17 @@ namespace AppStoresScraper
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));
             var result = new AppIcon();
             var httpResult = await _client.GetAsync(new Uri(meta.IconUrl));
-            result.Format = httpResult.Content?.Headers?.FirstOrDefault(c => c.Key == "Content-Type").Value?.FirstOrDefault();
-
-            if (!result.Format.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase))
+            if (httpResult.Content == null)
+                return result;
+            result.ContentType = httpResult.Content?.Headers?.ContentType?.MediaType;
+            if (result.ContentType?.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) == false)
             {
+                //todo: need to find System.Drawing alternative for .Net Core
                 var imgStream = await httpResult.Content.ReadAsStreamAsync();
                 var color = GetBgColor(meta);
                 result.Content = AddBackgroundColor(color, imgStream);
                 meta.AddValue("BgColorUsed", color);
+                //result.Content = await httpResult.Content.ReadAsByteArrayAsync();
             }
             else
             {
@@ -157,9 +166,7 @@ namespace AppStoresScraper
 
         private IList<string> ArrayToList(JArray array)
         {
-            if (array == null)
-                return null;
-            return (array).Select(x => x.ToString()).Distinct().ToList();
+            return array?.Select(x => x.ToString()).Distinct().ToList();
         }
 
         private class Image
@@ -184,14 +191,8 @@ namespace AppStoresScraper
                     return 99;
                 }
             }
-            public bool IsIcon
-            {
-                get
-                {
-                    return ImageType != null && !string.IsNullOrEmpty(Url) && Width == Height;
-                }
-            }
-
+            public bool IsIcon => ImageType != null && !string.IsNullOrEmpty(Url) && Width == Height;
         }
+
     }
 }

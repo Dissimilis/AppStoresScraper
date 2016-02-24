@@ -4,9 +4,10 @@ namespace AppStoresScraper
 {
     public interface IStoreScraper
     {
-        StoreType Store { get; }
+        ScraperStoreType Store { get; }
         string GetIdFromUrl(string url);
-        Task<AppMetadata> Scrape(string appId);
+        string GetUrlFromId(string id);
+        Task<AppMetadata> ScrapeAsync(string appId);
         Task<AppIcon> DownloadIcon(AppMetadata meta);
 
     }

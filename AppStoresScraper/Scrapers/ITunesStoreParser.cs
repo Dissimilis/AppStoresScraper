@@ -14,7 +14,7 @@ namespace AppStoresScraper
         private const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
         private HttpClient _client;
 
-        public StoreType Store { get; } = StoreType.ITunes;
+        public ScraperStoreType Store { get; } = ScraperStoreType.ITunes;
         public string UserAgent { get; set; }
 
 
@@ -22,14 +22,21 @@ namespace AppStoresScraper
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentException(nameof(url));
-            return RegexUtils.GetGroup(IdFromUrlRegex, url);
+            return IdFromUrlRegex.GetGroup(url);
         }
         public TunesStoreScraper(HttpClient client)
         {
             _client = client;
         }
 
-        public async Task<AppMetadata> Scrape(string appId)
+        public string GetUrlFromId(string appId)
+        {
+            if (appId == null)
+                throw new ArgumentNullException(nameof(appId));
+            return string.Format(StoreUrlTemplate, appId.ToLower());
+        }
+
+        public async Task<AppMetadata> ScrapeAsync(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
@@ -38,8 +45,7 @@ namespace AppStoresScraper
             var content = await response.Content.ReadAsStringAsync();
             var json = JsonConvert.DeserializeObject<dynamic>(content);
             var result = json["results"][0];
-            var meta = new AppMetadata() { Id = result.trackId };
-            meta.StoreUrl = result.trackViewUrl;
+            var meta = new AppMetadata() { Id = result.trackId, StoreType = Store, AppUrl = url };
             meta.Name = result.trackName;
             meta.IconUrl = result.artworkUrl512 ?? result.artworkUrl100 ?? result.artworkUrl60;
             meta.Publisher = result.sellerName ?? result.artistName;
@@ -50,6 +56,7 @@ namespace AppStoresScraper
             meta.Description = result.description;
             meta.Version = result.version;
             meta.Paid = result.price > 0;
+            meta.AddValue("Url", result.trackViewUrl.ToString());
             meta.AddValue("Price", result.formattedPrice.ToString());
             meta.AddValue("artistId", result.artistId);
             meta.AddValue("primaryGenreName", result.primaryGenreName);
@@ -59,7 +66,7 @@ namespace AppStoresScraper
             meta.AddValue("trackId", result.trackId);
             meta.AddValue("kind", result.formattedPrice);
             meta.AddValue("bundleId", result.bundleId);
-            DateTime date = DateTime.Now;
+            DateTime date;
             if (DateTime.TryParse((result.currentVersionReleaseDate ?? string.Empty).ToString(), out date))
             {
                 meta.Updated = date;
@@ -73,15 +80,16 @@ namespace AppStoresScraper
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));
             var result = new AppIcon();
             var httpResult = await _client.GetAsync(new Uri(meta.IconUrl));
-            result.Format = httpResult.Content?.Headers?.FirstOrDefault(c => c.Key == "Content-Type").Value?.FirstOrDefault();
-            result.Content = await httpResult.Content.ReadAsByteArrayAsync();
+            if (httpResult.Content != null)
+            {
+                result.ContentType = httpResult.Content?.Headers?.ContentType?.MediaType;
+                result.Content = await httpResult.Content.ReadAsByteArrayAsync();
+            }
             return result;
         }
         private IList<string> ArrayToList(JArray array)
         {
-            if (array == null)
-                return null;
-            return (array).Select(x => x.ToString()).Distinct().ToList();
+            return array?.Select(x => x.ToString()).Distinct().ToList();
         }
     }
 }

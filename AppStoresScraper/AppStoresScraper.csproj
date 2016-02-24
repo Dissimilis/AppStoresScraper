@@ -55,7 +55,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegexUtils.cs" />
     <Compile Include="StoreScraperFactory.cs" />
-    <Compile Include="StoreType.cs" />
+    <Compile Include="ScraperStoreType.cs" />
     <Compile Include="Scrapers\WindowsStoreParser.cs" />
   </ItemGroup>
   <ItemGroup>

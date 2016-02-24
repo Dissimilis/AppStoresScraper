@@ -3,12 +3,25 @@ using System.Collections.Generic;
 
 namespace AppStoresScraper
 {
-    public class AppMetadata
+
+    public class AppIdentification
     {
-        public string Name { get; set; }
-        public string StoreUrl { get; set; }
-        public string IconUrl { get; set; }
+        /// <summary>
+        /// Normalized store URL
+        /// </summary>
+        public string AppUrl { get; set; }
+        /// <summary>
+        /// Unique app id in store
+        /// </summary>
         public string Id { get; set; }
+    }
+
+    public class AppMetadata : AppIdentification
+    {
+        public ScraperStoreType StoreType { get; set; }
+        public string Name { get; set; }
+
+        public string IconUrl { get; set; }
         public string Publisher { get; set; }
         public string PublisherEmail { get; set; }
         public string Website { get; set; }
@@ -20,11 +33,11 @@ namespace AppStoresScraper
         public string Version { get; set; }
         public bool? Paid { get; set; }
         private Dictionary<string, string> _otherValues = new Dictionary<string, string>();
-        public IReadOnlyDictionary<string, string> OtherValues { get { return _otherValues; } }
+        public IReadOnlyDictionary<string, string> OtherValues => _otherValues;
 
         public void AddValue(string key, object value)
         {
-            string strVal = value != null ? value.ToString() : null;
+            string strVal = value?.ToString();
             _otherValues.Add(key, strVal);
         }
 

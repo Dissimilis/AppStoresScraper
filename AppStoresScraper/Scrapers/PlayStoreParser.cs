@@ -30,7 +30,7 @@ namespace AppStoresScraper
         private static Lazy<Regex> htmlNewLineRegex = new Lazy<Regex>(() => new Regex(@"<[brph]{1,2}[\s/]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase));
         private HttpClient _client;
 
-        public StoreType Store { get; } = StoreType.PlayStore;
+        public ScraperStoreType Store { get; } = ScraperStoreType.PlayStore;
         public PlayStoreScraper(HttpClient client)
         {
             _client = client;
@@ -40,16 +40,23 @@ namespace AppStoresScraper
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentException(nameof(url));
-            return RegexUtils.GetGroup(IdFromUrlRegex, url, 4);
+            return IdFromUrlRegex.GetGroup(url, 4);
         }
-        public async Task<AppMetadata> Scrape(string appId)
-        {
-            var uri = new Uri(string.Format(StoreUrlTemplate, appId));
 
+        public string GetUrlFromId(string appId)
+        {
+            if (appId == null)
+                throw new ArgumentNullException(nameof(appId));
+            return string.Format(StoreUrlTemplate, appId.ToLower());
+        }
+
+        public async Task<AppMetadata> ScrapeAsync(string appId)
+        {
+            var uri = GetUrlFromId(appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, uri);
             var response = await _client.SendAsync(msg);
             var content = await response.Content.ReadAsStringAsync();
-            var meta = new AppMetadata() { Id = appId, StoreUrl = uri.AbsoluteUri };
+            var meta = new AppMetadata() { Id = appId, AppUrl = uri, StoreType = Store };
             meta.Name = AppNameRegex.GetGroup(content);
             meta.IconUrl = IconImgRegex.GetGroup(content);
             if (meta.IconUrl != null)
@@ -86,8 +93,11 @@ namespace AppStoresScraper
             var result = new AppIcon();
             var msg = new HttpRequestMessage(HttpMethod.Get, meta.IconUrl);
             var httpResult = await _client.SendAsync(msg);
-            result.Format = httpResult.Content?.Headers?.FirstOrDefault(c => c.Key == "Content-Type").Value?.FirstOrDefault();
-            result.Content = await httpResult.Content.ReadAsByteArrayAsync();
+            if (httpResult.Content != null)
+            {
+                result.ContentType = httpResult.Content?.Headers?.ContentType?.MediaType;
+                result.Content = await httpResult.Content.ReadAsByteArrayAsync();
+            }
             return result;
         }
 

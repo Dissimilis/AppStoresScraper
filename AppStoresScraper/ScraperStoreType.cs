@@ -1,6 +1,6 @@
 namespace AppStoresScraper
 {
-    public enum StoreType
+    public enum ScraperStoreType
     {
         Unknown,
         PlayStore = 1,
