@@ -10,8 +10,7 @@ namespace AppStoresScraper
         public string AppId { get; set; }
 
         public TimeSpan ParseTime { get; set; }
-        public int ResponseErrorStatusCode { get; set; }
-        public Exception Exception { get; set; }
+        public ScraperException Exception { get; set; }
         public bool IsSuccessful => Exception == null && Store != ScraperStoreType.Unknown;
     }
 }

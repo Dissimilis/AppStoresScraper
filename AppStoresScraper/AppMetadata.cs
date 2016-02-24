@@ -7,15 +7,18 @@ namespace AppStoresScraper
     public class AppIdentification
     {
         /// <summary>
-        /// Normalized store URL
+        /// Normalized store URL (this URL is user for actual request to store)
         /// </summary>
         public string AppUrl { get; set; }
         /// <summary>
-        /// Unique app id in store
+        /// Unique app id in store (this id is set after parsing store)
         /// </summary>
         public string Id { get; set; }
     }
 
+    /// <summary>
+    /// Parsed app information
+    /// </summary>
     public class AppMetadata : AppIdentification
     {
         public ScraperStoreType StoreType { get; set; }
@@ -40,6 +43,5 @@ namespace AppStoresScraper
             string strVal = value?.ToString();
             _otherValues.Add(key, strVal);
         }
-
     }
 }

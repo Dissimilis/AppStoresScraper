@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="AppIcon.cs" />
     <Compile Include="AppMetadata.cs" />
+    <Compile Include="ScraperException.cs" />
     <Compile Include="StoreScrapeResult.cs" />
     <Compile Include="IStoreScraper.cs" />
     <Compile Include="Scrapers\ITunesStoreParser.cs" />

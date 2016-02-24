@@ -52,16 +52,16 @@ namespace AppStoresScraper
 
         public async Task<AppMetadata> ScrapeAsync(string appId)
         {
-            var uri = GetUrlFromId(appId);
-            var msg = new HttpRequestMessage(HttpMethod.Get, uri);
+            var url = GetUrlFromId(appId);
+            var msg = new HttpRequestMessage(HttpMethod.Get, url);
             var response = await _client.SendAsync(msg);
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
-            var meta = new AppMetadata() { Id = appId, AppUrl = uri, StoreType = Store };
+            var meta = new AppMetadata() { Id = appId, AppUrl = url, StoreType = Store };
             meta.Name = AppNameRegex.GetGroup(content);
             meta.IconUrl = IconImgRegex.GetGroup(content);
             if (meta.IconUrl != null)
                 meta.IconUrl = Regex.Replace(meta.IconUrl, "(.+?=)w\\d\\d\\d", "$1w900");
-
             if (!string.IsNullOrEmpty(meta.IconUrl) && meta.IconUrl.StartsWith("//"))
                 meta.IconUrl = "http:" + meta.IconUrl;
             DateTime datePublished;
@@ -83,7 +83,6 @@ namespace AppStoresScraper
                 meta.Paid = Regex.IsMatch(price, "[\\d]");
             meta.AddValue("Price", price);
             meta.Categories = CategoriesRegex.GetGroupMany(content, 1).ToList();
-
             return meta;
         }
         public async Task<AppIcon> DownloadIcon(AppMetadata meta)

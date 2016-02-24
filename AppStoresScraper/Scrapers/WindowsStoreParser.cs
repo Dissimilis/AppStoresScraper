@@ -47,6 +47,7 @@ namespace AppStoresScraper
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             msg.Headers.Add("MS-Contract-Version", "4");
             var response = await _client.SendAsync(msg);
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var result = GetAppPayload(content, appId);
             var meta = new AppMetadata() { Id = result.ProductId, StoreType = Store };
@@ -79,6 +80,8 @@ namespace AppStoresScraper
             {
                 meta.Updated = date;
             }
+            if (string.IsNullOrWhiteSpace(meta.Name) || string.IsNullOrWhiteSpace(meta.IconUrl))
+                throw new ScraperException("Windows scraper failed to parse result", Store, appId, url, (int)response.StatusCode);
             return meta;
         }
         public async Task<AppIcon> DownloadIcon(AppMetadata meta)

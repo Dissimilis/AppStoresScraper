@@ -23,46 +23,49 @@ namespace AppStoresScraper
             _client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
         }
 
-        public async Task<StoreScrapeResult> ScrapeAsync(string url, bool downloadImages)
+        public async Task<StoreScrapeResult> ScrapeAsync(string url, bool downloadImages = false)
         {
             var scraper = GetScraper(url);
             var id = scraper?.GetIdFromUrl(url);
             return await ScrapeAsync(scraper?.Store ?? ScraperStoreType.Unknown, id, downloadImages);
         }
-        public async Task<StoreScrapeResult> ScrapeAsync(ScraperStoreType type, string appId, bool downloadImages)
+        public async Task<StoreScrapeResult> ScrapeAsync(ScraperStoreType type, string appId, bool downloadImages = false)
         {
             var sw = new Stopwatch();
             sw.Start();
             var result = new StoreScrapeResult();
+            var scraper = GetScraper(type);
+            if (scraper == null)
+                return result;
+            result.Store = scraper.Store;
+            result.AppId = appId;
+            if (string.IsNullOrEmpty(appId))
+                return result;
             try
             {
-                var screaper = GetScraper(type);
-                if (screaper == null)
-                    return result;
-                result.Store = screaper.Store;
-                result.AppId = appId;
-                if (string.IsNullOrEmpty(appId))
-                    return result;
-                result.Metadata = await screaper.ScrapeAsync(appId);
+                result.Metadata = await scraper.ScrapeAsync(appId);
                 result.Metadata.StoreType = result.Store;
                 if (result.Metadata?.IconUrl != null && result.Metadata.IconUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    result.Icon = await screaper.DownloadIcon(result.Metadata);
+                    result.Icon = await scraper.DownloadIcon(result.Metadata);
                 }
+                if (string.IsNullOrWhiteSpace(result.Metadata.Name) || string.IsNullOrWhiteSpace(result.Metadata.IconUrl))
+                    result.Exception = new ScraperException(scraper.Store + " scraper failed to parse result", scraper.Store, appId, result.Metadata.AppUrl);
             }
-            catch (Exception ex)
+            catch (Exception ex) //should probably only catch WebException
             {
                 var wex = ex as WebException;
-                if (wex != null)
+                var httpResponse = wex?.Response as HttpWebResponse;
+                string url = null;
+                int? statusCode = null;
+                if (httpResponse != null)
                 {
-                    result.ResponseErrorStatusCode = (int)(wex.Response as HttpWebResponse)?.StatusCode;
+                    statusCode = (int) httpResponse.StatusCode;
+                    url = httpResponse.ResponseUri.AbsoluteUri;
                 }
-                result.Exception = ex;
+                result.Exception = new ScraperException(scraper.Store + " scraper failed", scraper.Store, appId, url, statusCode);
             }
-            finally
-            {
-                result.ParseTime = sw.Elapsed;
-            }
+            result.ParseTime = sw.Elapsed;
             return result;
         }
 

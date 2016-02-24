@@ -39,6 +39,11 @@ namespace Demo
             var icon = scraper.DownloadIcon(metadata).Result;
             ImageToAscii(icon.Content);
 
+            //invalid url
+            result = scraperFactory.ScrapeAsync("https://play.google.com/store/apps/details?id=invalid.Id.X", true).Result;
+            if (!result.IsSuccessful)
+                Console.WriteLine("Failed");
+
 
             Console.ReadKey();
         }

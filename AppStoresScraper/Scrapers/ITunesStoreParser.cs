@@ -42,6 +42,7 @@ namespace AppStoresScraper
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             msg.Headers.Add("Accept", "text/json");
             var response = await _client.SendAsync(msg);
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var json = JsonConvert.DeserializeObject<dynamic>(content);
             var result = json["results"][0];
@@ -72,7 +73,6 @@ namespace AppStoresScraper
                 meta.Updated = date;
             }
             return meta;
-
         }
         public async Task<AppIcon> DownloadIcon(AppMetadata meta)
         {
