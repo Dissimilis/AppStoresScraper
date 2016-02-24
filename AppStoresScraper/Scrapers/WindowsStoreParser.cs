@@ -38,7 +38,7 @@ namespace AppStoresScraper
         {
             if (appId == null)
                 throw new ArgumentNullException(nameof(appId));
-            return string.Format(StoreUrlUserTemplate, appId.ToLower());
+            return string.Format(StoreUrlUserTemplate, appId);
         }
 
         public async Task<AppMetadata> ScrapeAsync(string appId)
