@@ -10,7 +10,7 @@ namespace AppStoresScraper
 {
     public class TunesStoreScraper : IStoreScraper
     {
-        private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/[\w]*?/app/[\w-]*?/?id([\d]+)";
+        private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/[\w]*?/?app/[\w-]*?/?id([\d]+)";
         private const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
         private HttpClient _client;
 
