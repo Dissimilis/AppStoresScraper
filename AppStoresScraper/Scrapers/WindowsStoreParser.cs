@@ -84,7 +84,7 @@ namespace AppStoresScraper
                 throw new ScraperException("Windows scraper failed to parse result", Store, appId, url, (int)response.StatusCode);
             return meta;
         }
-        public async Task<AppIcon> DownloadIcon(AppMetadata meta)
+        public async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
         {
             if (string.IsNullOrEmpty(meta.IconUrl))
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));

@@ -8,13 +8,14 @@ using Newtonsoft.Json.Linq;
 
 namespace AppStoresScraper
 {
-    public class TunesStoreScraper : IStoreScraper
+    public class AppleStoreScraper : IStoreScraper
     {
-        private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/[\w]*?/?app/[\w-]*?/?id([\d]+)";
+        private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/.*/?app/.*?/?id([\d]+)";
         private const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
+        private const string StoreUrlUserTemplate = "https://itunes.apple.com/app/id{0}";
         private HttpClient _client;
 
-        public ScraperStoreType Store { get; } = ScraperStoreType.ITunes;
+        public ScraperStoreType Store { get; } = ScraperStoreType.AppleStore;
         public string UserAgent { get; set; }
 
 
@@ -24,7 +25,7 @@ namespace AppStoresScraper
                 throw new ArgumentException(nameof(url));
             return IdFromUrlRegex.GetGroup(url);
         }
-        public TunesStoreScraper(HttpClient client)
+        public AppleStoreScraper(HttpClient client)
         {
             _client = client;
         }
@@ -33,7 +34,7 @@ namespace AppStoresScraper
         {
             if (appId == null)
                 throw new ArgumentNullException(nameof(appId));
-            return string.Format(StoreUrlTemplate, appId);
+            return string.Format(StoreUrlUserTemplate, appId);
         }
 
         public async Task<AppMetadata> ScrapeAsync(string appId)
@@ -46,7 +47,7 @@ namespace AppStoresScraper
             var content = await response.Content.ReadAsStringAsync();
             var json = JsonConvert.DeserializeObject<dynamic>(content);
             var result = json["results"][0];
-            var meta = new AppMetadata() { Id = result.trackId, StoreType = Store, AppUrl = url };
+            var meta = new AppMetadata() { Id = result.trackId, StoreType = Store, AppUrl = GetUrlFromId(appId) };
             meta.Name = result.trackName;
             meta.IconUrl = result.artworkUrl512 ?? result.artworkUrl100 ?? result.artworkUrl60;
             meta.Publisher = result.sellerName ?? result.artistName;
@@ -74,7 +75,9 @@ namespace AppStoresScraper
             }
             return meta;
         }
-        public async Task<AppIcon> DownloadIcon(AppMetadata meta)
+
+
+        public async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
         {
             if (string.IsNullOrEmpty(meta.IconUrl))
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));

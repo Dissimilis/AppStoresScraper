@@ -85,7 +85,7 @@ namespace AppStoresScraper
             meta.Categories = CategoriesRegex.GetGroupMany(content, 1).ToList();
             return meta;
         }
-        public async Task<AppIcon> DownloadIcon(AppMetadata meta)
+        public async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
         {
             if (string.IsNullOrEmpty(meta.IconUrl))
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));

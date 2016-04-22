@@ -5,6 +5,6 @@ namespace AppStoresScraper
         Unknown,
         PlayStore = 1,
         WindowsStore = 2,
-        ITunes = 3,
+        AppleStore = 3,
     }
 }

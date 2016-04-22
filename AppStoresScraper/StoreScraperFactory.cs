@@ -47,7 +47,7 @@ namespace AppStoresScraper
                 result.Metadata.StoreType = result.Store;
                 if (result.Metadata?.IconUrl != null && result.Metadata.IconUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    result.Icon = await scraper.DownloadIcon(result.Metadata);
+                    result.Icon = await scraper.DownloadIconAsync(result.Metadata);
                 }
                 if (string.IsNullOrWhiteSpace(result.Metadata.Name) || string.IsNullOrWhiteSpace(result.Metadata.IconUrl))
                     result.Exception = new ScraperException(scraper.Store + " scraper failed to parse result", scraper.Store, appId, result.Metadata.AppUrl);
@@ -60,7 +60,7 @@ namespace AppStoresScraper
                 int? statusCode = null;
                 if (httpResponse != null)
                 {
-                    statusCode = (int) httpResponse.StatusCode;
+                    statusCode = (int)httpResponse.StatusCode;
                     url = httpResponse.ResponseUri.AbsoluteUri;
                 }
                 result.Exception = new ScraperException(scraper.Store + " scraper failed", scraper.Store, appId, url, statusCode);
@@ -83,7 +83,7 @@ namespace AppStoresScraper
             switch (store)
             {
                 case ScraperStoreType.PlayStore: return new PlayStoreScraper(_client);
-                case ScraperStoreType.ITunes: return new TunesStoreScraper(_client);
+                case ScraperStoreType.AppleStore: return new AppleStoreScraper(_client);
                 case ScraperStoreType.WindowsStore: return new WindowsStoreScraper(_client);
                 default: return null;
             }
@@ -101,7 +101,7 @@ namespace AppStoresScraper
             var id = scraper?.GetIdFromUrl(url);
             if (string.IsNullOrEmpty(id))
                 return null;
-            return new AppIdentification() { Id = id, AppUrl = scraper.GetUrlFromId(id) };
+            return new AppIdentification() { Id = id, AppUrl = scraper.GetUrlFromId(id), StoreType = store };
         }
 
         public string GetNormalizedUrl(ScraperStoreType store, string appId)
@@ -119,7 +119,7 @@ namespace AppStoresScraper
             if (url.StartsWith("https://play.google.com/store/", StringComparison.OrdinalIgnoreCase) || url.StartsWith("market://details?id=", StringComparison.OrdinalIgnoreCase))
                 return ScraperStoreType.PlayStore;
             if (url.StartsWith("https://itunes.apple.com/", StringComparison.OrdinalIgnoreCase))
-                return ScraperStoreType.ITunes;
+                return ScraperStoreType.AppleStore;
             if (Regex.IsMatch(url, @"http.*?://w*?\.*?microsoft.com/.*?/?store/.+", RegexOptions.IgnoreCase))
                 return ScraperStoreType.WindowsStore;
             return ScraperStoreType.Unknown;

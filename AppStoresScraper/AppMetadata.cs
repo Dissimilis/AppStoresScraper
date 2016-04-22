@@ -7,18 +7,17 @@ namespace AppStoresScraper
     public class AppIdentification
     {
         /// <summary>
-        /// Normalized store URL (this URL is user for actual request to store)
+        /// Normalized store URL
         /// </summary>
         public string AppUrl { get; set; }
         /// <summary>
-        /// Unique app id in store (this id is set after parsing store)
+        /// Unique app id in store
         /// </summary>
         public string Id { get; set; }
+
+        public ScraperStoreType StoreType { get; set; }
     }
 
-    /// <summary>
-    /// Parsed app information
-    /// </summary>
     public class AppMetadata : AppIdentification
     {
         public ScraperStoreType StoreType { get; set; }

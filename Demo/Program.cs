@@ -27,7 +27,7 @@ namespace Demo
             WriteJson(result);
 
             //Windows store
-            result = scraperFactory.ScrapeAsync("https://www.microsoft.com/en-us/store/apps/circle-rush/9nblggh0cdmf", true).Result;
+            result = scraperFactory.ScrapeAsync("https://www.microsoft.com/en-us/store/apps/whos-next/9nblggh6d070", true).Result;
             WriteJson(result);
 
             //Get store type from URL
@@ -36,13 +36,13 @@ namespace Demo
             //Get and call parser for specific store
             var scraper = scraperFactory.GetScraper(ScraperStoreType.PlayStore);
             var metadata = scraper.ScrapeAsync("com.android.chrome").Result;
-            var icon = scraper.DownloadIcon(metadata).Result;
+            var icon = scraper.DownloadIconAsync(metadata).Result;
             ImageToAscii(icon.Content);
 
             //invalid url
             result = scraperFactory.ScrapeAsync("https://play.google.com/store/apps/details?id=invalid.Id.X", true).Result;
             if (!result.IsSuccessful)
-                Console.WriteLine("Failed");
+                Console.WriteLine("Failed (intended)");
 
 
             Console.ReadKey();

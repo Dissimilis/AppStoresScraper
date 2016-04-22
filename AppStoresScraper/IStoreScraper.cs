@@ -8,7 +8,7 @@ namespace AppStoresScraper
         string GetIdFromUrl(string url);
         string GetUrlFromId(string id);
         Task<AppMetadata> ScrapeAsync(string appId);
-        Task<AppIcon> DownloadIcon(AppMetadata meta);
+        Task<AppIcon> DownloadIconAsync(AppMetadata meta);
 
     }
 }
