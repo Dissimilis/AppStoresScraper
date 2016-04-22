@@ -9,26 +9,44 @@ namespace AppStoresScraper
 {
     public class StoreScraperFactory
     {
-        public const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.0; https://github.com/Dissimilis/AppStoresScraper)";
+        private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.0; https://github.com/Dissimilis/AppStoresScraper)";
 
-        private HttpClient _client;
-        public StoreScraperFactory(string userAgent = null)
+        /// <summary>
+        /// HTTP client for making requests
+        /// </summary>
+        public HttpClient HttpClient { get; }
+
+        public StoreScraperFactory(string userAgent = DefaultUserAgent)
         {
             var cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
-            _client = new HttpClient(handler);
-            _client.DefaultRequestHeaders.Add("User-Agent", userAgent ?? DefaultUserAgent);
-            _client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.6,en;q=0.4,es;q=0.2");
-            _client.DefaultRequestHeaders.Add("Accept", "*/*");
-            _client.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
+            HttpClient = new HttpClient(handler);
+            HttpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
+            HttpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.6");
+            HttpClient.DefaultRequestHeaders.Add("Accept", "*/*");
+            HttpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
         }
 
+        /// <summary>
+        /// Detects store type from URL and gets app metadata
+        /// </summary>
+        /// <param name="url">URL to app</param>
+        /// <param name="downloadImages">If true, downloads app icon from store</param>
+        /// <returns>Scraping result. Scraping exception are stored int result.Exception</returns>
         public async Task<StoreScrapeResult> ScrapeAsync(string url, bool downloadImages = false)
         {
             var scraper = GetScraper(url);
             var id = scraper?.GetIdFromUrl(url);
             return await ScrapeAsync(scraper?.Store ?? ScraperStoreType.Unknown, id, downloadImages);
         }
+
+        /// <summary>
+        /// Gets app metadata from provided store
+        /// </summary>
+        /// <param name="appId">App id in store</param>
+        /// <param name="downloadImages">If true, downloads app icon from store</param>
+        /// <param name="type">App store type</param>
+        /// <returns>Scraping result. Scraping exception are stored int result.Exception</returns>
         public async Task<StoreScrapeResult> ScrapeAsync(ScraperStoreType type, string appId, bool downloadImages = false)
         {
             var sw = new Stopwatch();
@@ -69,22 +87,30 @@ namespace AppStoresScraper
             return result;
         }
 
-
+        /// <summary>
+        /// Analyzes URL and returns specific store scraper
+        /// </summary>
+        /// <param name="url">URL of app</param>
+        /// <returns>null when URL is invalid</returns>
         public IStoreScraper GetScraper(string url)
         {
             var type = GetStoreType(url);
             if (type == ScraperStoreType.Unknown)
                 return null;
             return GetScraper(type);
-
         }
+
+        /// <summary>
+        /// Gets scraper instance from store type enum
+        /// </summary>
+        /// <returns>Specific scraper instance</returns>
         public IStoreScraper GetScraper(ScraperStoreType store)
         {
             switch (store)
             {
-                case ScraperStoreType.PlayStore: return new PlayStoreScraper(_client);
-                case ScraperStoreType.AppleStore: return new AppleStoreScraper(_client);
-                case ScraperStoreType.WindowsStore: return new WindowsStoreScraper(_client);
+                case ScraperStoreType.PlayStore: return new PlayStoreScraper(HttpClient);
+                case ScraperStoreType.AppleStore: return new AppleStoreScraper(HttpClient);
+                case ScraperStoreType.WindowsStore: return new WindowsStoreScraper(HttpClient);
                 default: return null;
             }
         }
@@ -93,7 +119,7 @@ namespace AppStoresScraper
         /// Checks if URL is valid for any of supported scrapers (whithout making request to app store)
         /// </summary>
         /// <param name="url">URL to parse</param>
-        /// <returns>Normalized URL and AppId; Null if URL is invalid</returns>
+        /// <returns>Normalized URL and AppId; null if URL is invalid</returns>
         public AppIdentification ParseUrl(string url)
         {
             var store = GetStoreType(url);
@@ -104,14 +130,21 @@ namespace AppStoresScraper
             return new AppIdentification() { Id = id, AppUrl = scraper.GetUrlFromId(id), StoreType = store };
         }
 
+        /// <summary>
+        /// Constructs standard deterministic URL to app store from store type and app id in that store
+        /// </summary>
+        /// <param name="store">Store type</param>
+        /// <param name="appId">App id in store</param>
+        /// <returns>Full URL to app (ignores locality)</returns>
         public string GetNormalizedUrl(ScraperStoreType store, string appId)
         {
             var scraper = GetScraper(store);
             return scraper?.GetUrlFromId(appId);
         }
 
-
-
+        /// <summary>
+        /// Analyzes app URL and returns store type enum
+        /// </summary>
         public ScraperStoreType GetStoreType(string url)
         {
             if (string.IsNullOrEmpty(url))

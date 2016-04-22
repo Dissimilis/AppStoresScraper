@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("AppStoresScraper")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("AppStoresScraper is library for downloading app metadata from Google, Apple and Windows app stores")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Dissimilis")]
 [assembly: AssemblyProduct("AppStoresScraper")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
