@@ -39,6 +39,9 @@ namespace Demo
             var icon = scraper.DownloadIconAsync(metadata).Result;
             ImageToAscii(icon.Content);
 
+            var parsed = scraperFactory.ParseUrl("https://play.google.com/store/apps/details?id=com.android.chrome");
+            WriteJson(parsed);
+
             //invalid url
             result = scraperFactory.ScrapeAsync("https://play.google.com/store/apps/details?id=invalid.Id.X", true).Result;
             if (!result.IsSuccessful)
@@ -48,12 +51,13 @@ namespace Demo
             Console.ReadKey();
         }
  
-        static void WriteJson(StoreScrapeResult obj)
+        static void WriteJson(object obj)
         {
             var json = JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings {ContractResolver = new NoBloatResolver()});
             Console.WriteLine(json);
-            if (obj?.Icon?.Content != null)
-                ImageToAscii(obj.Icon.Content);
+            var result = obj as StoreScrapeResult;
+            if (result?.Icon?.Content != null)
+                ImageToAscii(result.Icon.Content);
         }
 
         static void ImageToAscii(byte[] content)

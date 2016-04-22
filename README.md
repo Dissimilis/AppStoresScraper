@@ -25,3 +25,7 @@ var storeType = scraperFactory.GetScraper("https://play.google.com/store/apps/de
 var scraper = scraperFactory.GetScraper(StoreType.PlayStore);
 var metadata = scraper.ScrapeAsync("com.android.chrome").Result;
 var icon = scraper.DownloadIcon(metadata).Result;
+
+//Parse URL
+var parsed = scraperFactory.ParseUrl("https://play.google.com/store/apps/details?id=com.android.chrome");
+//returns store type and app id
