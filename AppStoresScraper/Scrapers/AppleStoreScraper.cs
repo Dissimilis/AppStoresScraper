@@ -31,14 +31,14 @@ namespace AppStoresScraper
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             msg.Headers.Add("Accept", "text/json");
             var response = await _client.SendAsync(msg);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                LogWritter?.Invoke(TraceLevel.Warning, $"ITunes url [{url}] returned 404", null);
-                return null;
-            }
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var json = JsonConvert.DeserializeObject<dynamic>(content);
+            if (json?.resultCount == 0)
+            {
+                LogWritter?.Invoke(TraceLevel.Warning, $"Apple store (ITunes) url [{url}] returned zero results", null);
+                return null;
+            }
             var result = json["results"][0];
             var meta = new AppMetadata() { Id = result.trackId, ScraperType = this.GetType(), AppUrl = GetUrlFromId(appId) };
             meta.Name = result.trackName;

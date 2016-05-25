@@ -10,9 +10,9 @@ namespace AppStoresScraper
 {
     public class StoreScraperFactory
     {
+        private readonly Action<TraceLevel, string, Exception> _logWritter;
         private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.0; https://github.com/Dissimilis/AppStoresScraper)";
-
-
+        
         protected readonly Dictionary<Type, IStoreScraper> RegisteredScrapers = new Dictionary<Type, IStoreScraper>();
 
 
@@ -21,13 +21,10 @@ namespace AppStoresScraper
         /// </summary>
         public HttpClient HttpClient { get; set; }
 
-        /// <summary>
-        /// Log writter used to debug internars of scraper
-        /// </summary>
-        public Action<TraceLevel, string, Exception> LogWritter { get; set; }
-
-        public StoreScraperFactory(HttpClient httpClient = null, string userAgent = DefaultUserAgent)
+        
+        public StoreScraperFactory(HttpClient httpClient = null, string userAgent = DefaultUserAgent, Action<TraceLevel, string, Exception> logWritter = null)
         {
+            _logWritter = logWritter;
             var cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler() { CookieContainer = cookieContainer };
 
@@ -43,10 +40,10 @@ namespace AppStoresScraper
             {
                 HttpClient = httpClient;
             }
-            RegisteredScrapers.Add(typeof(WindowsStoreScraper), new WindowsStoreScraper(HttpClient) { LogWritter = LogWritter });
-            RegisteredScrapers.Add(typeof(AppleStoreScraper), new AppleStoreScraper(HttpClient) { LogWritter = LogWritter });
-            RegisteredScrapers.Add(typeof(PlayStoreScraper), new PlayStoreScraper(HttpClient) { LogWritter = LogWritter });
-            RegisteredScrapers.Add(typeof(SteamStoreScraper), new SteamStoreScraper(HttpClient) {LogWritter = LogWritter});
+            RegisteredScrapers.Add(typeof(WindowsStoreScraper), new WindowsStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisteredScrapers.Add(typeof(AppleStoreScraper), new AppleStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisteredScrapers.Add(typeof(PlayStoreScraper), new PlayStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisteredScrapers.Add(typeof(SteamStoreScraper), new SteamStoreScraper(HttpClient) {LogWritter = _logWritter });
         }
 
         /// <summary>
@@ -60,9 +57,9 @@ namespace AppStoresScraper
             var scraper = GetScraper(url);
             var id = scraper?.GetIdFromUrl(url);
             if (scraper == null)
-                LogWritter?.Invoke(TraceLevel.Info, $"No scraper registered for URL [{url}]", null);
+                _logWritter?.Invoke(TraceLevel.Info, $"No scraper registered for URL [{url}]", null);
             else if (id == null)
-                LogWritter?.Invoke(TraceLevel.Info, $"Scraper [{scraper.GetType().Name}] can't get app ID from URL [{url}]", null);
+                _logWritter?.Invoke(TraceLevel.Info, $"Scraper [{scraper.GetType().Name}] can't get app ID from URL [{url}]", null);
             return await ScrapeAsync(scraper, id, downloadImages);
         }
 
@@ -89,9 +86,9 @@ namespace AppStoresScraper
             try
             {
                 result.Metadata = await scraper.ScrapeAsync(appId);
-                result.Metadata.ScraperType = result.ScraperType;
                 if (result.Metadata != null)
                 {
+                    result.Metadata.ScraperType = result.ScraperType;
                     if (downloadImages)
                     {
                         if (result.Metadata.IconUrl != null && result.Metadata.IconUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -100,7 +97,7 @@ namespace AppStoresScraper
                         }
                         else
                         {
-                            LogWritter?.Invoke(TraceLevel.Warning, $"{scraper.GetType().Name} scraper did not found valid icon url [{result.Icon}]", null);
+                            _logWritter?.Invoke(TraceLevel.Warning, $"{scraper.GetType().Name} scraper did not found valid icon url [{result.Icon}]", null);
                         }
                     }
                     if (string.IsNullOrWhiteSpace(result.Metadata.Name))
@@ -118,7 +115,7 @@ namespace AppStoresScraper
                     statusCode = (int)httpResponse.StatusCode;
                     url = httpResponse.ResponseUri.AbsoluteUri;
                 }
-                LogWritter?.Invoke(TraceLevel.Error, $"{scraper.GetType().Name} scraper threw an exception while scraping [{url}]", ex);
+                _logWritter?.Invoke(TraceLevel.Error, $"{scraper.GetType().Name} scraper threw an exception while scraping; {url}", ex);
                 result.Exception = new ScraperException(scraper.GetType().Name + " scraper failed", scraper, ex, appId, url, statusCode);
             }
             result.ParseTime = sw.Elapsed;
@@ -154,7 +151,7 @@ namespace AppStoresScraper
             IStoreScraper scraper = null;
             RegisteredScrapers.TryGetValue(typeof(T), out scraper);
             if (scraper == null)
-                LogWritter?.Invoke(TraceLevel.Warning, $"Scraper {typeof(T).Name} is not registered", null);
+                _logWritter?.Invoke(TraceLevel.Warning, $"Scraper {typeof(T).Name} is not registered", null);
             return scraper;
         }
 

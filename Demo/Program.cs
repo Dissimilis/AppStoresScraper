@@ -48,8 +48,11 @@ namespace Demo
             var parsed = scraperFactory.ParseUrl("https://play.google.com/store/apps/details?id=com.android.chrome");
             WriteJson(parsed);
 
+            //Add loggin
+            scraperFactory = new StoreScraperFactory(logWritter: (level, s, ex) => { Console.WriteLine(level + ": " + s); }); 
+
             //invalid url
-            result = scraperFactory.ScrapeAsync("https://play.google.com/store/apps/details?id=invalid.Id.X", true).Result;
+            result = scraperFactory.ScrapeAsync("https://itunes.apple.com/us/app/logic-pro-x/id123", true).Result;
             if (!result.IsSuccessful)
                 Console.WriteLine("Failed (intended)");
 
