@@ -10,6 +10,8 @@ namespace AppStoresScraper
 
         public static string GetGroup(this string regexStr, string matchStr, int groupId = 1)
         {
+            if (string.IsNullOrEmpty(matchStr))
+                return matchStr;
             var regex = GetRegex(regexStr);
             var m = regex.Match(matchStr);
             if (m.Success && m.Groups.Count > groupId)
@@ -20,12 +22,15 @@ namespace AppStoresScraper
         }
         public static IEnumerable<string> GetGroupMany(this string regexStr, string matchStr, int groupId = 1)
         {
-            var regex = GetRegex(regexStr);
-            var m = regex.Match(matchStr);
-            while (m.Success)
+            if (!string.IsNullOrEmpty(matchStr))
             {
-                yield return m.Groups[groupId]?.Value;
-                m = m.NextMatch();
+                var regex = GetRegex(regexStr);
+                var m = regex.Match(matchStr);
+                while (m.Success)
+                {
+                    yield return m.Groups[groupId]?.Value;
+                    m = m.NextMatch();
+                }
             }
         }
 

@@ -15,7 +15,6 @@ namespace Demo
     {
         static void Main(string[] args)
         {
-
             var scraperFactory = new StoreScraperFactory();
 
             //Apple store
@@ -30,11 +29,18 @@ namespace Demo
             result = scraperFactory.ScrapeAsync("https://www.microsoft.com/en-us/store/apps/whos-next/9nblggh6d070", true).Result;
             WriteJson(result);
 
-            //Get store type from URL
-            var storeType = scraperFactory.GetScraper("https://play.google.com/store/apps/details?id=com.android.chrome").Store;
+            //Steam store
+            result = scraperFactory.ScrapeAsync("http://store.steampowered.com/app/364360/", true).Result;
+            WriteJson(result);
+
+            //Check if Steam store url
+            if (scraperFactory.GetScraper("http://store.steampowered.com/app/364360") is SteamStoreScraper)
+            {
+                //<..>
+            }
 
             //Get and call parser for specific store
-            var scraper = scraperFactory.GetScraper(ScraperStoreType.PlayStore);
+            var scraper = scraperFactory.GetScraper<PlayStoreScraper>();
             var metadata = scraper.ScrapeAsync("com.android.chrome").Result;
             var icon = scraper.DownloadIconAsync(metadata).Result;
             ImageToAscii(icon.Content);

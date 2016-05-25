@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -11,46 +13,38 @@ using Newtonsoft.Json.Linq;
 
 namespace AppStoresScraper
 {
-    public class WindowsStoreScraper : IStoreScraper
+    public class WindowsStoreScraper : StoreScraperBase
     {
-        private const string IdFromUrlRegex = @"http.*?://w*?\.*?microsoft.com/[\w-/]*?store/.+/([\w]+)";//https://www.microsoft.com/store/apps/{0}
-        private const string StoreUrlTemplate = "https://storeedgefd.dsx.mp.microsoft.com/pages/pdp?productId={0}&appVersion=2015.9.9.2&market=US&locale=en-US&deviceFamily=Windows.Desktop";
-        private const string StoreUrlUserTemplate = "https://www.microsoft.com/store/apps/{0}";
-        private HttpClient _client;
+        protected HttpClient _client;
+        protected const string StoreUrlTemplate = "https://storeedgefd.dsx.mp.microsoft.com/pages/pdp?productId={0}&appVersion=2015.9.9.2&market=US&locale=en-US&deviceFamily=Windows.Desktop";
 
-        public ScraperStoreType Store { get; } = ScraperStoreType.WindowsStore;
+        protected override string StoreUrlUserTemplate { get; } = "https://www.microsoft.com/store/apps/{0}";
+        protected override string IdFromUrlRegex { get; } = @"http.*?://w*?\.*?microsoft.com/[\w-/]*?store/.+/([\w]+)"; //https://www.microsoft.com/store/apps/{0}
+        
 
         //Uses this color if API returns transparent or empty BgColor
-
         public string DefaultBgColor { get; set; } = "#2f5ef6";
 
-        public string GetIdFromUrl(string url)
-        {
-            if (string.IsNullOrEmpty(url))
-                throw new ArgumentException(nameof(url));
-            return RegexUtils.GetGroup(IdFromUrlRegex, url);
-        }
         public WindowsStoreScraper(HttpClient client)
         {
             _client = client;
         }
-        public string GetUrlFromId(string appId)
-        {
-            if (appId == null)
-                throw new ArgumentNullException(nameof(appId));
-            return string.Format(StoreUrlUserTemplate, appId);
-        }
 
-        public async Task<AppMetadata> ScrapeAsync(string appId)
+        public override async Task<AppMetadata> ScrapeAsync(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             msg.Headers.Add("MS-Contract-Version", "4");
             var response = await _client.SendAsync(msg);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                LogWritter?.Invoke(TraceLevel.Warning, $"Windows store url [{url}] returned 404", null);
+                return null;
+            }
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var result = GetAppPayload(content, appId);
-            var meta = new AppMetadata() { Id = result.ProductId, StoreType = Store };
+            var meta = new AppMetadata() { Id = result.ProductId, ScraperType = this.GetType() };
             meta.AppUrl = string.Format(StoreUrlUserTemplate, meta.Id);
             meta.Name = result.Title;
             var icon = GetIcon(result.Images);
@@ -81,10 +75,10 @@ namespace AppStoresScraper
                 meta.Updated = date;
             }
             if (string.IsNullOrWhiteSpace(meta.Name) || string.IsNullOrWhiteSpace(meta.IconUrl))
-                throw new ScraperException("Windows scraper failed to parse result", Store, appId, url, (int)response.StatusCode);
+                throw new ScraperException("Windows scraper failed to parse result", this, appId, url, (int)response.StatusCode);
             return meta;
         }
-        public async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
+        public override async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
         {
             if (string.IsNullOrEmpty(meta.IconUrl))
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));
@@ -108,7 +102,7 @@ namespace AppStoresScraper
             }
             return result;
         }
-        private Color GetBgColor(AppMetadata meta)
+        protected virtual Color GetBgColor(AppMetadata meta)
         {
             try
             {
@@ -126,7 +120,7 @@ namespace AppStoresScraper
             catch { }
             return Color.Black;
         }
-        private byte[] AddBackgroundColor(Color color, Stream imageStream)
+        protected virtual byte[] AddBackgroundColor(Color color, Stream imageStream)
         {
             Bitmap bmp = new Bitmap(imageStream);
             using (var b = new Bitmap(bmp.Width, bmp.Height))

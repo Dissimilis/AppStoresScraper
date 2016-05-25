@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -8,46 +10,37 @@ using Newtonsoft.Json.Linq;
 
 namespace AppStoresScraper
 {
-    public class AppleStoreScraper : IStoreScraper
+    public class AppleStoreScraper : StoreScraperBase
     {
-        private const string IdFromUrlRegex = @"http.*?://w*?\.*?itunes\.apple\.com/.*/?app/.*?/?id([\d]+)";
-        private const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
-        private const string StoreUrlUserTemplate = "https://itunes.apple.com/app/id{0}";
-        private HttpClient _client;
+        protected const string StoreUrlTemplate = "http://itunes.apple.com/lookup?id={0}";
+        protected HttpClient _client;
 
-        public ScraperStoreType Store { get; } = ScraperStoreType.AppleStore;
-        public string UserAgent { get; set; }
+        protected override string StoreUrlUserTemplate { get; } = "https://itunes.apple.com/app/id{0}";
+        protected override string IdFromUrlRegex { get; } = @"http.*?://w*?\.*?itunes\.apple\.com/.*/?app/.*?/?id([\d]+)";
 
 
-        public string GetIdFromUrl(string url)
-        {
-            if (string.IsNullOrEmpty(url))
-                throw new ArgumentException(nameof(url));
-            return IdFromUrlRegex.GetGroup(url);
-        }
         public AppleStoreScraper(HttpClient client)
         {
             _client = client;
         }
 
-        public string GetUrlFromId(string appId)
-        {
-            if (appId == null)
-                throw new ArgumentNullException(nameof(appId));
-            return string.Format(StoreUrlUserTemplate, appId);
-        }
 
-        public async Task<AppMetadata> ScrapeAsync(string appId)
+        public override async Task<AppMetadata> ScrapeAsync(string appId)
         {
             var url = string.Format(StoreUrlTemplate, appId);
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             msg.Headers.Add("Accept", "text/json");
             var response = await _client.SendAsync(msg);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                LogWritter?.Invoke(TraceLevel.Warning, $"ITunes url [{url}] returned 404", null);
+                return null;
+            }
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var json = JsonConvert.DeserializeObject<dynamic>(content);
             var result = json["results"][0];
-            var meta = new AppMetadata() { Id = result.trackId, StoreType = Store, AppUrl = GetUrlFromId(appId) };
+            var meta = new AppMetadata() { Id = result.trackId, ScraperType = this.GetType(), AppUrl = GetUrlFromId(appId) };
             meta.Name = result.trackName;
             meta.IconUrl = result.artworkUrl512 ?? result.artworkUrl100 ?? result.artworkUrl60;
             meta.Publisher = result.sellerName ?? result.artistName;
@@ -77,7 +70,7 @@ namespace AppStoresScraper
         }
 
 
-        public async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
+        public override async Task<AppIcon> DownloadIconAsync(AppMetadata meta)
         {
             if (string.IsNullOrEmpty(meta.IconUrl))
                 throw new ArgumentException("Metadata has empty icon url", nameof(meta));

@@ -53,15 +53,18 @@
     <Compile Include="AppIcon.cs" />
     <Compile Include="AppMetadata.cs" />
     <Compile Include="ScraperException.cs" />
+    <Compile Include="Scrapers\SteamStoreScraper.cs" />
+    <Compile Include="Scrapers\StoreScraperBase.cs" />
     <Compile Include="StoreScrapeResult.cs" />
     <Compile Include="IStoreScraper.cs" />
-    <Compile Include="Scrapers\ITunesStoreParser.cs" />
-    <Compile Include="Scrapers\PlayStoreParser.cs" />
+    <Compile Include="Scrapers\ITunesStoreScraper.cs" />
+    <Compile Include="Scrapers\PlayStoreScraper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegexUtils.cs" />
     <Compile Include="StoreScraperFactory.cs" />
     <Compile Include="ScraperStoreType.cs" />
-    <Compile Include="Scrapers\WindowsStoreParser.cs" />
+    <Compile Include="Scrapers\WindowsStoreScraper.cs" />
+    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

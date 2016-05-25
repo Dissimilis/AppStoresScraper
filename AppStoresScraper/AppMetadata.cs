@@ -15,12 +15,12 @@ namespace AppStoresScraper
         /// </summary>
         public string Id { get; set; }
 
-        public ScraperStoreType StoreType { get; set; }
+        public Type ScraperType { get; set; }
+        
     }
 
     public class AppMetadata : AppIdentification
     {
-        public ScraperStoreType StoreType { get; set; }
         public string Name { get; set; }
 
         public string IconUrl { get; set; }
@@ -36,6 +36,7 @@ namespace AppStoresScraper
         public bool? Paid { get; set; }
         private Dictionary<string, string> _otherValues = new Dictionary<string, string>();
         public IReadOnlyDictionary<string, string> OtherValues => _otherValues;
+
 
         public void AddValue(string key, object value)
         {
