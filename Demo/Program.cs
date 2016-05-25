@@ -18,7 +18,7 @@ namespace Demo
             var scraperFactory = new StoreScraperFactory();
 
             //Apple store
-            var result = scraperFactory.ScrapeAsync("https://itunes.apple.com/us/app/logic-pro-x/id634148309?mt=12", true).Result;
+            StoreScrapeResult result = scraperFactory.ScrapeAsync("https://itunes.apple.com/us/app/logic-pro-x/id634148309?mt=12", true).Result;
             WriteJson(result);
 
             //Google Play store
