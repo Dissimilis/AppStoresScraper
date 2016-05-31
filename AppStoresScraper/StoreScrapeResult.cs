@@ -11,6 +11,6 @@ namespace AppStoresScraper
 
         public TimeSpan ParseTime { get; set; }
         public ScraperException Exception { get; set; }
-        public bool IsSuccessful => Exception == null && ScraperType != null;
+        public bool IsSuccessful => Exception == null && ScraperType != null && Metadata != null;
     }
 }

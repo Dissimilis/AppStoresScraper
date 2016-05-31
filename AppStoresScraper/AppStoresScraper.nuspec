@@ -7,8 +7,8 @@
         <authors>Dissimilis</authors>
         <projectUrl>https://github.com/Dissimilis/AppStoresScraper</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>AppStoresScraper is library for downloading app metadata from Google, Apple and Windows app stores</description>
-        <summary>AppStoresScraper is library for downloading app metadata from Google, Apple and Windows app stores</summary>
+        <description>AppStoresScraper is library for downloading app metadata from Steam, Google, Apple and Windows app stores</description>
+        <summary>AppStoresScraper is library for downloading app metadata from Steam, Google, Apple and Windows app stores</summary>
         <copyright>MIT License</copyright>
         <language>en-US</language>
         <tags>GooglePlayStore GoogleStore PlayStore ITunes ITunesStore WindowsStore AppStore Parser Scraper Crawler</tags>

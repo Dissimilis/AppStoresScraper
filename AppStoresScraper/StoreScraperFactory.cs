@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
@@ -11,15 +12,19 @@ namespace AppStoresScraper
     public class StoreScraperFactory
     {
         private readonly Action<TraceLevel, string, Exception> _logWritter;
-        private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.0; https://github.com/Dissimilis/AppStoresScraper)";
+        private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; AppStoresScraper/1.2; https://github.com/Dissimilis/AppStoresScraper)";
         
-        protected readonly Dictionary<Type, IStoreScraper> RegisteredScrapers = new Dictionary<Type, IStoreScraper>();
+        protected readonly Dictionary<Type, IStoreScraper> RegisteredScraperInstances = new Dictionary<Type, IStoreScraper>();
 
+        /// <summary>
+        /// Scrapers available to this factory
+        /// </summary>
+        public virtual IReadOnlyCollection<IStoreScraper> RegisretedScrapers => RegisteredScraperInstances.Values.ToArray();
 
         /// <summary>
         /// HTTP client for making requests
         /// </summary>
-        public HttpClient HttpClient { get; set; }
+        public HttpClient HttpClient { get; private set; }
 
         
         public StoreScraperFactory(HttpClient httpClient = null, string userAgent = DefaultUserAgent, Action<TraceLevel, string, Exception> logWritter = null)
@@ -40,10 +45,12 @@ namespace AppStoresScraper
             {
                 HttpClient = httpClient;
             }
-            RegisteredScrapers.Add(typeof(WindowsStoreScraper), new WindowsStoreScraper(HttpClient) { LogWritter = _logWritter });
-            RegisteredScrapers.Add(typeof(AppleStoreScraper), new AppleStoreScraper(HttpClient) { LogWritter = _logWritter });
-            RegisteredScrapers.Add(typeof(PlayStoreScraper), new PlayStoreScraper(HttpClient) { LogWritter = _logWritter });
-            RegisteredScrapers.Add(typeof(SteamStoreScraper), new SteamStoreScraper(HttpClient) {LogWritter = _logWritter });
+
+            RegisterScraper(new PlayStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisterScraper(new AppleStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisterScraper(new WindowsStoreScraper(HttpClient) { LogWritter = _logWritter });
+            RegisterScraper(new SteamStoreScraper(HttpClient) { LogWritter = _logWritter });
+            
         }
 
         /// <summary>
@@ -61,6 +68,19 @@ namespace AppStoresScraper
             else if (id == null)
                 _logWritter?.Invoke(TraceLevel.Info, $"Scraper [{scraper.GetType().Name}] can't get app ID from URL [{url}]", null);
             return await ScrapeAsync(scraper, id, downloadImages);
+        }
+
+        /// <summary>
+        /// Gets app metadata from store using provided scraper type
+        /// </summary>
+        /// <param name="scraperType">Scraper type to use (must be IStoreScraper)</param>
+        /// <param name="appId">App Id in store</param>
+        /// <param name="downloadImages">If true, downloads app icon from store</param>
+        /// <returns>Scraping result. Scraping exception are stored int result.Exception</returns>
+        public virtual async Task<StoreScrapeResult> ScrapeAsync(Type scraperType, string appId, bool downloadImages = true)
+        {
+            var scraper = GetScraper(scraperType);
+            return await ScrapeAsync(scraper, appId, downloadImages);
         }
 
         /// <summary>
@@ -129,9 +149,9 @@ namespace AppStoresScraper
         /// <returns>null when URL is invalid</returns>
         public virtual IStoreScraper GetScraper(string url)
         {
-            if (string.IsNullOrEmpty(url) || RegisteredScrapers == null)
+            if (string.IsNullOrEmpty(url) || RegisteredScraperInstances == null)
                 return null;
-            foreach (var s in RegisteredScrapers)
+            foreach (var s in RegisteredScraperInstances)
             {
                 if (!string.IsNullOrWhiteSpace(s.Value?.GetIdFromUrl(url)))
                 {
@@ -146,14 +166,31 @@ namespace AppStoresScraper
         /// </summary>
         /// <typeparam name="T">Type of store scraper</typeparam>
         /// <returns>Scraper instance</returns>
-        public virtual IStoreScraper GetScraper<T>() where T:IStoreScraper
+        public virtual IStoreScraper GetScraper<T>() where T:class, IStoreScraper
         {
             IStoreScraper scraper = null;
-            RegisteredScrapers.TryGetValue(typeof(T), out scraper);
+            RegisteredScraperInstances.TryGetValue(typeof(T), out scraper);
             if (scraper == null)
                 _logWritter?.Invoke(TraceLevel.Warning, $"Scraper {typeof(T).Name} is not registered", null);
             return scraper;
         }
+
+        /// <summary>
+        /// Gets registered scraper instance
+        /// </summary>
+        /// <typeparam name="T">Type of store scraper</typeparam>
+        /// <returns>Scraper instance</returns>
+        public virtual IStoreScraper GetScraper(Type scraperType)
+        {
+            if (scraperType == null)
+                throw new ArgumentNullException(nameof(scraperType));
+            IStoreScraper scraper = null;
+            RegisteredScraperInstances.TryGetValue(scraperType, out scraper);
+            if (scraper == null)
+                _logWritter?.Invoke(TraceLevel.Warning, $"Scraper {scraperType.Name} is not registered", null);
+            return scraper;
+        }
+
 
         /// <summary>
         /// Checks if URL is valid for any of supported scrapers (whithout making request to app store)
@@ -172,14 +209,45 @@ namespace AppStoresScraper
         /// <summary>
         /// Constructs standard deterministic URL to app store from store type and app id in that store
         /// </summary>
-        /// <param name="store">Store type</param>
         /// <param name="appId">App id in store</param>
         /// <returns>Full URL to app (ignores locality)</returns>
-        public virtual string GetNormalizedUrl<T>(string appId) where T: IStoreScraper
+        public virtual string GetNormalizedUrl<T>(string appId) where T: class, IStoreScraper
         {
             var scraper = GetScraper<T>();
             return scraper?.GetUrlFromId(appId);
         }
 
+        /// <summary>
+        /// Constructs standard deterministic URL to app store from store type and app id in that store
+        /// </summary>
+        /// <param name="scraperType">Store scraper type (IStoreScraper)</param>
+        /// <param name="appId">App id in store</param>
+        /// <returns>Full URL to app (ignores locality)</returns>
+        public string GetNormalizedUrl(Type scraperType, string appId)
+        {
+            var scraper = GetScraper(scraperType);
+            return scraper?.GetUrlFromId(appId);
+        }
+
+        /// <summary>
+        /// Registers new or changes existing scraper instance
+        /// </summary>
+        /// <param name="scraper">Scraper instance to add/change</param>
+        public void RegisterScraper(IStoreScraper scraper)
+        {
+            RegisteredScraperInstances[scraper.GetType()] = scraper;
+        }
+
+        /// <summary>
+        /// Unregisters scraper 
+        /// </summary>
+        /// <typeparam name="T">Type of scraper to remove</typeparam>
+        /// <returns>True on success</returns>
+        public bool RemoveScraper<T> () where T: class, IStoreScraper
+        {
+            return RegisteredScraperInstances.Remove(typeof(T));
+        }
+
+        
     }
 }
