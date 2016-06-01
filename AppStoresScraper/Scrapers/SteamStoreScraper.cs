@@ -19,7 +19,7 @@ namespace AppStoresScraper
 
 
         protected override string StoreUrlUserTemplate { get; } = "http://store.steampowered.com/app/{0}/";
-        protected override string IdFromUrlRegex { get; } = @"http.*?://store\.steampowered\.com/app/([\d\.]+)";
+        protected override string IdFromUrlRegex { get; } = @"^http.*?://store\.steampowered\.com/app/([\d]+)";
 
         public string GetIdFromUrl(string url)
         {

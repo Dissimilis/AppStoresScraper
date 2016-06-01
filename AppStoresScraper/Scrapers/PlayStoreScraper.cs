@@ -26,7 +26,7 @@ namespace AppStoresScraper
         protected HttpClient _client;
 
         protected override string StoreUrlUserTemplate { get; } = "https://play.google.com/store/apps/details?id={0}&hl=en";
-        protected override string IdFromUrlRegex { get; } = @"((http.*?://play\.google\.com/store/apps/)|(market://))details\?id=([\w\.]+)";
+        protected override string IdFromUrlRegex { get; } = @"^((http.*?://play\.google\.com/store/apps/)|(market://))details\?id=([\w\.]+)";
 
         public PlayStoreScraper(HttpClient client)
         {

@@ -30,7 +30,7 @@ namespace Demo
             WriteJson(result);
 
             //Steam store
-            result = scraperFactory.ScrapeAsync("http://store.steampowered.com/app/364360/", true).Result;
+            result = scraperFactory.ScrapeAsync("http://store.steampowered.com/app/264710/", true).Result;
             WriteJson(result);
 
             //Check if Steam store url

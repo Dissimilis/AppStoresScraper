@@ -11,7 +11,7 @@ namespace AppStoresScraper
     public static class Utils
     {
         private static Lazy<Regex> _htmlStripRegex = new Lazy<Regex>(() => new Regex(@"<[^>]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase));
-        private static Lazy<Regex> _htmlNewLineRegex = new Lazy<Regex>(() => new Regex(@"</?[brph0-9]{1,2}[\s/]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+        private static Lazy<Regex> _htmlNewLineRegex = new Lazy<Regex>(() => new Regex(@"</?[brph0-9]{1,2}[^a-z0-9].*?>", RegexOptions.Compiled | RegexOptions.IgnoreCase));
         private static Lazy<Regex> _htmlNewLineCompressionRegex = new Lazy<Regex>(() => new Regex("[\r\n]+", RegexOptions.Compiled));
 
         /// <summary>

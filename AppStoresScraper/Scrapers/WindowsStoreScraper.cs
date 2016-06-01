@@ -19,7 +19,7 @@ namespace AppStoresScraper
         protected const string StoreUrlTemplate = "https://storeedgefd.dsx.mp.microsoft.com/pages/pdp?productId={0}&appVersion=2015.9.9.2&market=US&locale=en-US&deviceFamily=Windows.Desktop";
 
         protected override string StoreUrlUserTemplate { get; } = "https://www.microsoft.com/store/apps/{0}";
-        protected override string IdFromUrlRegex { get; } = @"http.*?://w*?\.*?microsoft.com/[\w-/]*?store/.+/([\w]+)"; //https://www.microsoft.com/store/apps/{0}
+        protected override string IdFromUrlRegex { get; } = @"^http.*?://w*?\.*?microsoft.com/[\w-/]*?store/.+/([\w]+)"; //https://www.microsoft.com/store/apps/{0}
         
 
         //Uses this color if API returns transparent or empty BgColor

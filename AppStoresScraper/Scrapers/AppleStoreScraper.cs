@@ -16,7 +16,7 @@ namespace AppStoresScraper
         protected HttpClient _client;
 
         protected override string StoreUrlUserTemplate { get; } = "https://itunes.apple.com/app/id{0}";
-        protected override string IdFromUrlRegex { get; } = @"http.*?://w*?\.*?itunes\.apple\.com/.*/?app/.*?/?id([\d]+)";
+        protected override string IdFromUrlRegex { get; } = @"^http.*?://w*?\.*?itunes\.apple\.com/.*/?app/.*?/?id([\d]+)";
 
 
         public AppleStoreScraper(HttpClient client)
