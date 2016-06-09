@@ -33,6 +33,13 @@ namespace AppStoresScraper
             _client = client;
         }
 
+        public override string GetIdFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentException(nameof(url));
+            return IdFromUrlRegex.GetGroup(url,4);
+        }
+
         public override async Task<AppMetadata> ScrapeAsync(string appId)
         {
             var url = GetUrlFromId(appId);
